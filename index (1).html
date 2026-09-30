@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>언제 만나? 약속 날짜 정하기</title>
+<meta property="og:title" content="언제 만나? 약속 날짜 정하기">
+<meta property="og:description" content="이름을 입력하고 되는 날짜를 체크해 주세요.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FCFAF4; --ink:#2A3F8F; --ink-soft:#5C6CA8; --grid:#AEB6E0;
+  --star:#F3C4E4; --muted:#8A90AE; --fill-text:#FCFAF4; --surface:#F4F1FA;
+  --danger:#B23A5B;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#141B38; --ink:#DCE2FF; --ink-soft:#A7B2E6; --grid:#3B4679;
+    --star:#E79BCF; --muted:#7D86B5; --fill-text:#141B38; --surface:#1B2347;
+    --danger:#F08AA6;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141B38; --ink:#DCE2FF; --ink-soft:#A7B2E6; --grid:#3B4679;
+  --star:#E79BCF; --muted:#7D86B5; --fill-text:#141B38; --surface:#1B2347;
+  --danger:#F08AA6;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1120px;margin:0 auto;padding:28px clamp(16px,4vw,40px) 56px}
+
+/* header echoes a wall calendar */
+header.top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.month-big{font-family:Anton,Impact,"Arial Narrow",sans-serif;font-size:clamp(84px,17vw,190px);
+  line-height:.86;letter-spacing:-.01em;margin:0;text-transform:uppercase}
+.year{display:flex;flex-direction:column;align-items:flex-end;font-family:Anton,Impact,sans-serif;
+  font-size:clamp(36px,6vw,62px);line-height:.92;position:relative;padding-top:34px}
+.year svg{position:absolute;top:0;right:4px;width:30px;height:30px;fill:var(--star)}
+.title-row{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:18px 0 22px}
+.title-input{font:700 clamp(20px,3vw,26px)/1.3 inherit;font-family:inherit;color:var(--ink);background:transparent;
+  border:0;border-bottom:2px dashed transparent;padding:2px 0;min-width:0;width:min(100%,520px)}
+.title-input:hover{border-bottom-color:var(--grid)}
+.title-input:focus{outline:none;border-bottom-color:var(--ink)}
+.title-input:disabled{border-bottom-color:transparent}
+.hint{color:var(--muted);font-size:14px}
+
+/* join bar */
+.join{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 16px;
+  border:1.5px solid var(--ink);border-radius:14px;margin-bottom:22px}
+.join label{font-weight:700}
+.join input{flex:1 1 180px;min-width:0;font:inherit;color:var(--ink);background:var(--paper);
+  border:1.5px solid var(--grid);border-radius:10px;padding:9px 12px}
+.join input:focus{outline:none;border-color:var(--ink)}
+.btn{font:700 15px/1 inherit;font-family:inherit;border-radius:10px;padding:11px 16px;cursor:pointer;
+  border:1.5px solid var(--ink);background:var(--ink);color:var(--paper)}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.small{padding:7px 11px;font-size:13px}
+.btn:focus-visible,.cell:focus-visible,.nav:focus-visible,.chip:focus-visible,.title-input:focus-visible{outline:3px solid var(--star);outline-offset:2px}
+.me{display:flex;gap:10px;align-items:center;flex-wrap:wrap;flex:1}
+.me strong{font-size:18px}
+.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:28px;align-items:start}
+@media (max-width:860px){.layout{grid-template-columns:1fr}}
+
+/* calendar */
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-head h2{margin:0;font-size:18px}
+.nav{width:40px;height:40px;border-radius:50%;border:1.5px solid var(--grid);background:transparent;color:var(--ink);
+  font-size:18px;cursor:pointer}
+.nav:disabled{opacity:.35;cursor:default}
+.dow,.grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.dow div{font-family:Anton,Impact,sans-serif;font-size:clamp(15px,2.4vw,24px);text-align:center;padding:6px 0 8px;letter-spacing:.01em}
+.grid{border-top:1.5px solid var(--grid);border-left:1.5px solid var(--grid)}
+.cell{position:relative;aspect-ratio:1/1;min-height:56px;border:0;border-right:1.5px solid var(--grid);
+  border-bottom:1.5px solid var(--grid);background:var(--paper);color:var(--ink);font:inherit;padding:0;cursor:pointer;
+  display:block;text-align:right;transition:background-color .15s}
+.cell .n{position:absolute;top:6px;right:9px;font-weight:700;font-size:clamp(13px,1.8vw,16px)}
+.cell .cnt{position:absolute;left:8px;bottom:6px;font-size:12px;font-weight:500;text-align:left}
+.cell.empty{cursor:default;background:transparent}
+.cell.past{cursor:not-allowed;color:var(--muted)}
+.cell.past .n{opacity:.5}
+.cell.mine::after{content:"";position:absolute;inset:4px;border:2.5px solid var(--ink);border-radius:6px;pointer-events:none}
+.cell.dark{color:var(--fill-text)}
+.cell.dark.mine::after{border-color:var(--fill-text)}
+.cell.sel{box-shadow:inset 0 0 0 3px var(--star)}
+.cell .allstar{position:absolute;top:6px;left:7px;width:18px;height:18px;fill:var(--star)}
+.cell.today .n{text-decoration:underline;text-underline-offset:3px}
+.legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px;font-size:13px;color:var(--ink-soft);align-items:center}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:16px;height:16px;border-radius:4px;display:inline-block;border:1.5px solid var(--grid)}
+.sw.mine{border:2.5px solid var(--ink)}
+.legend svg{width:16px;height:16px;fill:var(--star)}
+
+/* side panel */
+aside{display:flex;flex-direction:column;gap:22px}
+aside section{border-top:1.5px solid var(--ink);padding-top:12px}
+aside h3{margin:0 0 10px;font-size:16px}
+.best{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.best li{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;
+  background:var(--surface);cursor:pointer}
+.best li b{font-weight:700}
+.best li .who{color:var(--ink-soft);font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1.5px solid var(--grid);border-radius:999px;padding:4px 10px;font-size:14px;background:transparent;color:var(--ink);font-family:inherit}
+.chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.chip.off{color:var(--muted);text-decoration:line-through}
+.empty-note{color:var(--muted);font-size:14px;margin:0}
+.status{font-size:13px;color:var(--muted);min-height:1.2em;margin-top:8px}
+.status.err{color:var(--danger)}
+.banner{padding:10px 14px;border-radius:10px;background:var(--surface);font-size:14px;margin-bottom:16px}
+@media (prefers-reduced-motion:reduce){.cell{transition:none}.shake{animation:none}}
+</style>
+<style>
+.landing{max-width:520px;padding:28px 0 8px}
+.landing p{margin:0 0 18px;color:var(--ink-soft)}
+.landing .row{display:flex;gap:10px;flex-wrap:wrap}
+.landing input{flex:1 1 220px;min-width:0;font:inherit;color:var(--ink);background:var(--paper);border:1.5px solid var(--grid);border-radius:10px;padding:11px 12px}
+.landing input:focus{outline:none;border-color:var(--ink)}
+.sharebar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:-8px 0 20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1 class="month-big" id="bigMonth">OCT</h1>
+    <div class="year" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M12 1l2.2 5.3L19.8 4l-2.3 5.6L23 12l-5.5 2.4 2.3 5.6-5.6-2.3L12 23l-2.2-5.3L4.2 20l2.3-5.6L1 12l5.5-2.4L4.2 4l5.6 2.3z"/></svg>
+      <span id="y1">20</span><span id="y2">26</span>
+    </div>
+  </header>
+
+  <div class="banner" id="configErr" hidden>config.js에 Supabase 주소와 anon key를 넣어야 사이트가 작동해요.</div>
+
+  <!-- 약속 만들기 화면 (주소에 ?e= 가 없을 때) -->
+  <section class="landing" id="landing" hidden>
+    <h2 style="margin:0 0 6px">새 약속 만들기</h2>
+    <p>약속 이름을 정하면 공유할 링크가 만들어져요.</p>
+    <div class="row">
+      <input id="newTitle" maxlength="40" placeholder="예: 10월 동기 모임" aria-label="약속 이름">
+      <button class="btn" id="createBtn">약속 만들기</button>
+    </div>
+    <div class="status" id="landingStatus" role="status"></div>
+  </section>
+
+  <!-- 약속 화면 -->
+  <div id="app" hidden>
+    <div class="title-row">
+      <input class="title-input" id="title" maxlength="40" value="" aria-label="약속 이름">
+      <span class="hint">약속 이름은 눌러서 바꿀 수 있어요</span>
+    </div>
+    <div class="sharebar">
+      <button class="btn ghost small" id="copyBtn">링크 복사</button>
+      <span class="hint" id="copyHint">이 링크를 카톡으로 보내면 같은 달력에 모여요</span>
+    </div>
+
+    <div class="join" id="joinBox">
+      <div id="joinForm" style="display:contents">
+        <label for="name">내 이름</label>
+        <input id="name" maxlength="20" placeholder="이름을 입력하세요" autocomplete="nickname">
+        <button class="btn" id="joinBtn">날짜 고르기</button>
+      </div>
+      <div class="me" id="meBox" hidden>
+        <span><strong id="meName"></strong> 님, 가능한 날짜를 눌러 체크하세요.</span>
+        <span class="hint" id="meCount"></span>
+        <span style="flex:1"></span>
+        <button class="btn ghost small" id="switchBtn">다른 이름으로</button>
+        <button class="btn ghost small" id="leaveBtn">내 응답 삭제</button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <main>
+        <div class="cal-head">
+          <button class="nav" id="prev" aria-label="이전 달">‹</button>
+          <h2 id="monthLabel"></h2>
+          <button class="nav" id="next" aria-label="다음 달">›</button>
+        </div>
+        <div class="dow" aria-hidden="true"><div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div></div>
+        <div class="grid" id="grid" role="grid"></div>
+        <div class="legend">
+          <span><i class="sw" style="background:color-mix(in srgb,var(--ink) 25%,var(--paper))"></i>가능한 사람 적음</span>
+          <span><i class="sw" style="background:var(--ink)"></i>많음</span>
+          <span><i class="sw mine"></i>내가 고른 날</span>
+          <span><svg viewBox="0 0 24 24"><path d="M12 1l2.2 5.3L19.8 4l-2.3 5.6L23 12l-5.5 2.4 2.3 5.6-5.6-2.3L12 23l-2.2-5.3L4.2 20l2.3-5.6L1 12l5.5-2.4L4.2 4l5.6 2.3z"/></svg>모두 가능</span>
+        </div>
+        <div class="status" id="status" role="status"></div>
+      </main>
+
+      <aside>
+        <section>
+          <h3>가장 많이 모이는 날</h3>
+          <ul class="best" id="best"></ul>
+        </section>
+        <section>
+          <h3 id="dayTitle">날짜를 누르면 누가 되는지 보여요</h3>
+          <div class="chips" id="dayChips"></div>
+        </section>
+        <section>
+          <h3 id="peopleTitle">참여자</h3>
+          <div class="chips" id="people"></div>
+        </section>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
